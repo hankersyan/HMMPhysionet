@@ -10,8 +10,9 @@ Python 2.7, scipy, hmmlearn, numpy, sklearn,statsmodel
 It is assumed that you've already obtained the dataset file which can be downloaded here:
 https://physionet.org/challenge/2012/
 
-Once you have the data, and all the data in training, put output file and the files in this repository into a folder called "HMMphys" to 
-This repositoryincludes the following files:
+Once you have the data, and all the data in train folder, put outcome file and the files in this repository into a folder called "HMMphys" to be able to run these scripts without much change. 
+
+This repository includes the following files:
 
 sing.py : running the HMM model on all patients(ICU type 5 ) or single ICU units (1,2,3,4)
 
@@ -22,3 +23,8 @@ apache.txt, mpm.txt, recid.txt,saps.txt, sofa.txt : Output scores used solely fo
 plt.R : R script to generate the circle plots showing count and average length of stay of various start end state pairs.
 
 ttest.R: R script to output ttest values for a given result file containing RMSE values across the different runs for both the baseline model and the HMM model.
+
+Feel free to use these files in your research , but kindly cite us if you end up using these:
+Mani Sotoodeh, Joyce Ho. (2019). "Improving length of stay prediction using a hidden Markov model." AMIA 2019 Summit
+
+Should you have any questions contact me at: mani.sotoodeh--at--gmail.com
