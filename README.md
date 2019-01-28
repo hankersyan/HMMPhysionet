@@ -14,7 +14,11 @@ Once you have the data, and all the data in training, put output file and the fi
 This repositoryincludes the following files:
 
 sing.py : running the HMM model on all patients(ICU type 5 ) or single ICU units (1,2,3,4)
-eightwelve.py : running the HMM model on the combined model of training ICU types (1,2) together and (3,4) together too. 
+
+eighttwelve.py : running the HMM model on the combined model of training ICU types (1,2) together and (3,4) together too. 
+
 apache.txt, mpm.txt, recid.txt,saps.txt, sofa.txt : Output scores used solely for performance comparison with HMM model. 
-plt.R : R script to generate the circle plots showing count and average length of stay of various start end state pairs. 
+
+plt.R : R script to generate the circle plots showing count and average length of stay of various start end state pairs.
+
 ttest.R: R script to output ttest values for a given result file containing RMSE values across the different runs for both the baseline model and the HMM model.
