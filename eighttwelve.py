@@ -6,6 +6,8 @@ matplotlib.pyplot.switch_backend('agg')
 import seaborn as sns ; sns.set(style="ticks", color_codes=True)
 import os
 import csv
+from sklearn.model_selection import cross_val_score
+
 import pandas as pd
 from scipy import stats
 from sklearn.neighbors import KNeighborsRegressor
@@ -198,13 +200,20 @@ def main():
                             (ordscores[0],ordselalg,ordselcovartype,ovlapscores[0],ovlapselalg,ovlapselcovartype ,traininghmmfeats1,testhmmfeats1,ytrain1,ytest1,ordAvgVarPatches[0],ordVarRadiiPatchesmean[0],ordVarRadiiPatchesmedian[0],ovlapAvgVarPatches[0],ovlapVarRadiiPatchesmean[0],ovlapVarRadiiPatchesmedian[0],ordtransmat, ovlaptransmat , ordpii , ovlappii  ) = learnhmm (validpatientsindices,KNNfeats,reallos1,inputHmmallVars,ovlapinputHmmallVars,trainindices,testindices,dictindices,resolution,numofstates,8,over,model)
                             sapstrain1 = [saps[lam] for lam in trainindices]
                             sapstest1 = [saps[lamb] for lamb in testindices]
+                            sapstrain1 = np.array(sapstrain1)
+                            sapstest1 = np.array(sapstest1)
+
                             outputfeatstrain1 = outputfeats[trainindices,:]
                             outputfeatstest1 = outputfeats[testindices,:]   
                             (validpatientsindices,realfeatmtrxtrain2,realfeatmtrxtest2,KNNfeats,reallos2,inputHmmallVars,ovlapinputHmmallVars,trainindices,testindices) = generatetraintestsplit(listofalldicts,wholefeat,los,12,ages,genders,urinedict,paticutypedictindex,resolutions)
                             (ordscores[0],ordselalg,ordselcovartype,ovlapscores[0],ovlapselalg,ovlapselcovartype ,traininghmmfeats2,testhmmfeats2,ytrain2,ytest2,ordAvgVarPatches[0],ordVarRadiiPatchesmean[0],ordVarRadiiPatchesmedian[0],ovlapAvgVarPatches[0],ovlapVarRadiiPatchesmean[0],ovlapVarRadiiPatchesmedian[0],ordtransmat, ovlaptransmat , ordpii , ovlappii  ) = learnhmm (validpatientsindices,KNNfeats,reallos2,inputHmmallVars,ovlapinputHmmallVars,trainindices,testindices,dictindices,resolution,numofstates,12,over,model)
                         
                             sapstrain2 = [saps[lam] for lam in trainindices]
-                            sapstest2 = [saps[lamb] for lamb in testindices]                                
+                            sapstest2 = [saps[lamb] for lamb in testindices]    
+                            sapstrain2 = np.array(sapstrain2)
+                            sapstest2 = np.array(sapstest2)
+
+
                 
 
                             outputfeatstrain2 = outputfeats[trainindices,:]
@@ -218,8 +227,8 @@ def main():
                             baselinescore1 = Linearregr(realfeatmtrxtrain1, realfeatmtrxtest1, ytrain1, ytest1,hmm,log,numofstates,resolution,8,model)
                             baselinescore2 = Linearregr(realfeatmtrxtrain2, realfeatmtrxtest2, ytrain2, ytest2,hmm,log,numofstates,resolution,12,model)
                             hmm = True
-                            sapsscore1 = Linearregr(sapstrain1, sapstest1, ytrain1, ytest1,hmm,log,numofstates,resolution,8,model)
-                            sapsscore2 = Linearregr(sapstrain2, sapstest2, ytrain2, ytest2,hmm,log,numofstates,resolution,12,model)
+                            sapsscore1 = Linearregr(sapstrain1.reshape(-1, 1), sapstest1.reshape(-1, 1), ytrain1, ytest1,hmm,log,numofstates,resolution,8,model)
+                            sapsscore2 = Linearregr(sapstrain2.reshape(-1, 1), sapstest2.reshape(-1, 1), ytrain2, ytest2,hmm,log,numofstates,resolution,12,model)
 
                             alloutputscore1 = Linearregr(outputfeatstrain1, outputfeatstest1, ytrain1, ytest1,hmm,log,numofstates,resolution,8,model)
                             alloutputscore2 = Linearregr(outputfeatstrain2, outputfeatstest2, ytrain2, ytest2,hmm,log,numofstates,resolution,12,model)

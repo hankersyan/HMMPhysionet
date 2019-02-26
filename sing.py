@@ -11,6 +11,7 @@ from scipy import stats
 from sklearn.neighbors import KNeighborsRegressor
 from hmmlearn import hmm     
 import warnings
+from sklearn.model_selection import cross_val_score
 from babel.util import missing
 from IPython.core.magics import pylab
 from boto.ec2.cloudwatch import dimension
@@ -195,6 +196,8 @@ def main():
                             (ordscores[0],ordselalg,ordselcovartype,ovlapscores[0],ovlapselalg,ovlapselcovartype ,traininghmmfeats1,testhmmfeats1,ytrain1,ytest1,ordAvgVarPatches[0],ordVarRadiiPatchesmean[0],ordVarRadiiPatchesmedian[0],ovlapAvgVarPatches[0],ovlapVarRadiiPatchesmean[0],ovlapVarRadiiPatchesmedian[0],ordtransmat, ovlaptransmat , ordpii , ovlappii   ) = learnhmm (validpatientsindices,KNNfeats,reallos1,inputHmmallVars,ovlapinputHmmallVars,trainindices,testindices,dictindices,resolution,numofstates,icutype,over,model)
                             sapstrain = [saps[lam] for lam in trainindices]
                             sapstest = [saps[lamb] for lamb in testindices]
+                            sapstrain = np.array(sapstrain)
+                            sapstest = np.array(sapstest)
                             outputfeatstrain = outputfeats[trainindices,:]
                             outputfeatstest = outputfeats[testindices,:]
                             # setting hmm flag to true and running the linear regression                          
@@ -204,10 +207,16 @@ def main():
                             balgmse = performbaseline(realfeatmtrxtrain1,ytrain1,realfeatmtrxtest1,ytest1)
                             baselinescore = Linearregr(realfeatmtrxtrain1, realfeatmtrxtest1, ytrain1, ytest1,hmm,log,numofstates,resolution,icutype,model)
                             hmm = True
-                            sapsscore = Linearregr(sapstrain, sapstest, ytrain1, ytest1,hmm,log,numofstates,resolution,icutype,model)
+                            sapsscore = Linearregr(sapstrain.reshape(-1, 1), sapstest.reshape(-1, 1), ytrain1, ytest1,hmm,log,numofstates,resolution,icutype,model)
                             success1 = int(hmmmsescore < baselinescore) 
                             success2 = int(balgmse< baselinescore)
                             success3 = int(hmmmsescore< sapsscore)
+                            print "hmm"
+                            print hmmmsescore
+                            print "baseline"
+                            print baselinescore
+                            print "saps"
+                            print sapsscore
                             # writes the statistics for this run to the file for later inspection
                             w.writerow([model,name ,over,log, numofstates,resolution,icutype,hmmmsescore ,baselinescore,balgmse,sapsscore,success1,success2,success3])
 def heatmapofvitalschange(ovlaplosidx,nstates,ovlapinputtest):
