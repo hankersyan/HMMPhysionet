@@ -17,7 +17,8 @@ from babel.util import missing
 from IPython.core.magics import pylab
 from boto.ec2.cloudwatch import dimension
 warnings.filterwarnings("ignore", category=DeprecationWarning)
-from sklearn.externals import joblib
+#from sklearn.externals import joblib
+import joblib
 import sklearn
 from scipy.optimize import linear_sum_assignment
 import matplotlib.collections
@@ -977,12 +978,12 @@ def startendlosvisualizerweighted(indivtrainstates,ovlapindivtrainstates,changes
                 radiiovlapchg[(i,j)] = float(float(np.sum(ovlaploschg[(i,j)])) / float(ovlapprobchg[i,j]))
             if len(ovlaplosnonchg[(i,j)]) >= 1:            
                 radiiovlapnonchg[(i,j)] = float(float(np.sum(ovlaplosnonchg[(i,j)])) / float(ovlapprobnonchg[i,j]))
-    ordAvgVarPatches = np.mean(radiiordvariance.values())
-    ordVarRadiiPatchesmean = np.var(radiiord.values())
-    ordVarRadiiPatchesmedian = np.var(radiiordmedian.values())
-    ovlapAvgVarPatches = np.mean(radiioverlapvariance.values())
-    ovlapVarRadiiPatchesmean = np.var(radiioverlap.values())
-    ovlapVarRadiiPatchesmedian = np.var(radiiovlapmedian.values())
+    ordAvgVarPatches = np.mean(list(radiiordvariance.values()))
+    ordVarRadiiPatchesmean = np.var(list(radiiord.values()))
+    ordVarRadiiPatchesmedian = np.var(list(radiiordmedian.values()))
+    ovlapAvgVarPatches = np.mean(list(radiioverlapvariance.values()))
+    ovlapVarRadiiPatchesmean = np.var(list(radiioverlap.values()))
+    ovlapVarRadiiPatchesmedian = np.var(list(radiiovlapmedian.values()))
     biggestloskeyord = keywithmaxval(radiiord)
     biggestloskeyovlap = keywithmaxval(radiioverlap)
     idxbiggestlosord = ordlosidx[biggestloskeyord]
@@ -1404,7 +1405,7 @@ def hmmcompactgrid(nstate,inputtrain,trainlengths,ninits,dimensionality):
         for covtype in covartypes:
             for i in range( ninits):
                 nsamp = np.shape(inputtrain)[0] / dimensionality
-                lengthaks = [dimensionality] * nsamp
+                lengthaks = [dimensionality] * int(nsamp)
                 hmmmodel = hmm.GaussianHMM(n_iter = 10,algorithm=alg,n_components= int(nstate), covariance_type=covtype).fit(inputtrain,lengths = lengthaks)   
                 score = hmmmodel.score(inputtrain,lengths = trainlengths)
                 if score > bestscore :
@@ -1588,6 +1589,8 @@ def xtracttopfeat():
     # reading each patients data, and putting it into the dictionary
     for ind in range(132539,142674):
         filename = str(ind) + ".txt"
+        if not os.path.isfile(filename):
+            continue
         try:
             f = open(filename,'r')
             recids.append(ind)

@@ -16,7 +16,8 @@ from babel.util import missing
 from IPython.core.magics import pylab
 from boto.ec2.cloudwatch import dimension
 warnings.filterwarnings("ignore", category=DeprecationWarning)
-from sklearn.externals import joblib
+#from sklearn.externals import joblib
+import joblib
 import sklearn
 from scipy.optimize import linear_sum_assignment
 import matplotlib.collections
@@ -73,9 +74,16 @@ def main():
     featfirst1,featfirst2,featfirst3,featfirst4,\
     featsecond1,featsecond2,featsecond3,featsecond4,\
     paticutypedictindex, heartratedict,ages,genders,WBCdict,tempdict,GCSdict,glucosedict,NIDSdict,urinedict,AVGmeanchangefeats,AVGmedianchangefeats,recidees) = xtracttopfeat() 
+    # wholefeat,featmtrx1,featmtrx2,featmtrx3,featmtrx4,featfirst1,featfirst2,featfirst3,featfirst4,featsecond1,featsecond2,featsecond3,featsecond4 N*35
+    # paticutypedictindex 4 * array[patientIndex]
+    # heartratedict,WBCdict,tempdict,GCSdict,glucosedict,NIDSdict,urinedict 4000 * array[(time, value)]
+    # ages,genders 4000
+    # AVGmeanchangefeats,AVGmedianchangefeats 7 * (feature: value)
+    # recidees 4000 * pid
 
     # Extracting length of stay of patients
     (los,los1,los2,los3,los4,invalids,losrecids) = xtrlenofstay(paticutypedictindex)
+    # los,los1,los2,los3,los4 shape=(n,1)
     # dealing with patients who have no LOS, who have missign saps score
     recid = [int(j) for j in recid]
     misak = (set(list(recidees)) - set(list(recid)))
@@ -189,11 +197,20 @@ def main():
                             name += "numofstates="
                             name += str(numofstates)
                             name += "icutype="
+                            # heartratedict,WBCdict,tempdict,GCSdict,glucosedict,NIDSdict,urinedict num_pat*[array[map(time:value)]]
                             listofalldicts = [heartratedict,WBCdict,tempdict,GCSdict,glucosedict,NIDSdict,urinedict]
                             resolutions = [resolution] * 7
                             (validpatientsindices,realfeatmtrxtrain1,realfeatmtrxtest1,KNNfeats,reallos1,inputHmmallVars,ovlapinputHmmallVars,trainindices,testindices) = generatetraintestsplit(listofalldicts,wholefeat,los,icutype,ages,genders,urinedict,paticutypedictindex,resolutions)
                             dictindices= range(7)
+                            # realfeatmtrxtrain1 num_pat*35, realfeatmtrxtest1 num_pat*35
+                            # KNNfeats n*2, reallos1 n*[los]
+                            # inputHmmallVars 7*[num_pat*[6]], ovlapinputHmmallVars 7*[num_pat*[11]]
                             (ordscores[0],ordselalg,ordselcovartype,ovlapscores[0],ovlapselalg,ovlapselcovartype ,traininghmmfeats1,testhmmfeats1,ytrain1,ytest1,ordAvgVarPatches[0],ordVarRadiiPatchesmean[0],ordVarRadiiPatchesmedian[0],ovlapAvgVarPatches[0],ovlapVarRadiiPatchesmean[0],ovlapVarRadiiPatchesmedian[0],ordtransmat, ovlaptransmat , ordpii , ovlappii   ) = learnhmm (validpatientsindices,KNNfeats,reallos1,inputHmmallVars,ovlapinputHmmallVars,trainindices,testindices,dictindices,resolution,numofstates,icutype,over,model)
+                            # ordscores, ovlapscores, ordAvgVarPatches, ordVarRadiiPatchesmean, ordVarRadiiPatchesmedian, ovlapAvgVarPatches, ovlapVarRadiiPatchesmean,ovlapVarRadiiPatchesmedian 7
+                            # ordtransmat, ovlaptransmat 8*8
+                            # ordpii , ovlappii shape(8,)
+                            # traininghmmfeats1, testhmmfeats1 n*16
+                            # ytrain1,ytest1 n*[los]
                             sapstrain = [saps[lam] for lam in trainindices]
                             sapstest = [saps[lamb] for lamb in testindices]
                             sapstrain = np.array(sapstrain)
@@ -211,12 +228,12 @@ def main():
                             success1 = int(hmmmsescore < baselinescore) 
                             success2 = int(balgmse< baselinescore)
                             success3 = int(hmmmsescore< sapsscore)
-                            print "hmm"
-                            print hmmmsescore
-                            print "baseline"
-                            print baselinescore
-                            print "saps"
-                            print sapsscore
+                            print("hmm")
+                            print(hmmmsescore)
+                            print("baseline")
+                            print(baselinescore)
+                            print("saps")
+                            print(sapsscore)
                             # writes the statistics for this run to the file for later inspection
                             w.writerow([model,name ,over,log, numofstates,resolution,icutype,hmmmsescore ,baselinescore,balgmse,sapsscore,success1,success2,success3])
 def heatmapofvitalschange(ovlaplosidx,nstates,ovlapinputtest):
@@ -830,10 +847,11 @@ def Linearregr(trainingx,testx,trainingy,testy,hmm,log,numofstate,everyxhours,ic
         logtrainingy = trainingy
         logtesty = testy
     # scaling both training and test using the same scaler
+    # trainingx n*16
     scaler = sklearn.preprocessing.StandardScaler().fit(trainingx)
     trainingx = scaler.transform(trainingx)
     testx = scaler.transform(testx)
-    featmtrx = np.concatenate((trainingx,testx),axis = 0)
+    featmtrx = np.concatenate((trainingx,testx),axis = 0) # featmtrx n+m * 16
     totsamp = np.shape(featmtrx)[0]
     numtrain = np.shape(trainingx)[0]
     # applying pca based on the flag, only if the mode is not 
@@ -845,10 +863,10 @@ def Linearregr(trainingx,testx,trainingy,testy,hmm,log,numofstate,everyxhours,ic
         pca.fit(featmtrx)
         pcafeatmtrx = pca.fit_transform(featmtrx)
 
-    sapsdetect = len(np.shape(pcafeatmtrx))
+    sapsdetect = len(np.shape(pcafeatmtrx)) # sapsdetect 2
     if sapsdetect != 1:
-        trainingfeats = pcafeatmtrx[0:numtrain,:]
-        testfeats = pcafeatmtrx[numtrain:,:]
+        trainingfeats = pcafeatmtrx[0:numtrain,:] # trainingfeats n*16
+        testfeats = pcafeatmtrx[numtrain:,:] # testfeats m*16
     else:
         trainingfeats = pcafeatmtrx[0:numtrain]
         testfeats = pcafeatmtrx[numtrain:]   
@@ -954,12 +972,12 @@ def startendlosvisualizerweighted(indivtrainstates,ovlapindivtrainstates,changes
                 radiiovlapchg[(i,j)] = float(float(np.sum(ovlaploschg[(i,j)])) / float(ovlapprobchg[i,j]))
             if len(ovlaplosnonchg[(i,j)]) >= 1:            
                 radiiovlapnonchg[(i,j)] = float(float(np.sum(ovlaplosnonchg[(i,j)])) / float(ovlapprobnonchg[i,j]))
-    ordAvgVarPatches = np.mean(radiiordvariance.values())
-    ordVarRadiiPatchesmean = np.var(radiiord.values())
-    ordVarRadiiPatchesmedian = np.var(radiiordmedian.values())
-    ovlapAvgVarPatches = np.mean(radiioverlapvariance.values())
-    ovlapVarRadiiPatchesmean = np.var(radiioverlap.values())
-    ovlapVarRadiiPatchesmedian = np.var(radiiovlapmedian.values())
+    ordAvgVarPatches = np.mean(list(radiiordvariance.values()))
+    ordVarRadiiPatchesmean = np.var(list(radiiord.values()))
+    ordVarRadiiPatchesmedian = np.var(list(radiiordmedian.values()))
+    ovlapAvgVarPatches = np.mean(list(radiioverlapvariance.values()))
+    ovlapVarRadiiPatchesmean = np.var(list(radiioverlap.values()))
+    ovlapVarRadiiPatchesmedian = np.var(list(radiiovlapmedian.values()))
     biggestloskeyord = keywithmaxval(radiiord)
     biggestloskeyovlap = keywithmaxval(radiioverlap)
     idxbiggestlosord = ordlosidx[biggestloskeyord]
@@ -1305,6 +1323,7 @@ def imputefeatures(trainindices,testindices,inputhmm,KNNtrain,KNNtest,dimensiona
         nonmistest = list(set(range(len(testindices))) - set(missingfirsttest))
         if len(missingfirsttrain) > 0:
             neightrain = KNeighborsRegressor(n_neighbors=5)
+            # KNNtrain n*2, inputhmmtrain n*6*7, KNNtrain[nonmistrain,:]=[n*[2]], inputhmmtrain[nonmistrain,0,i]=[n]
             neightrain.fit(KNNtrain[nonmistrain,:],inputhmmtrain[nonmistrain,0,i])
             inputhmmtrain[missingfirsttrain,0,i] = neightrain.predict(KNNtrain[missingfirsttrain,:])
         if len(missingfirsttest) > 0:
@@ -1381,7 +1400,7 @@ def hmmcompactgrid(nstate,inputtrain,trainlengths,ninits,dimensionality):
         for covtype in covartypes:
             for i in range( ninits):
                 nsamp = np.shape(inputtrain)[0] / dimensionality
-                lengthaks = [dimensionality] * nsamp
+                lengthaks = [dimensionality] * int(nsamp)
                 hmmmodel = hmm.GaussianHMM(n_iter = 10,algorithm=alg,n_components= int(nstate), covariance_type=covtype).fit(inputtrain)   
                 score = hmmmodel.score(inputtrain,lengths = trainlengths)
                 if score > bestscore :
@@ -1478,11 +1497,13 @@ def doLRandreport(trainingx,trainingy,testx,testy,bestalpha,method):
         realmodel = linear_model.Ridge(alpha = bestalpha, max_iter = 10000,fit_intercept=True)
     if method == 'Lasso':
         realmodel = linear_model.Lasso(alpha = bestalpha, max_iter = 10000,fit_intercept=True)
+    # trainingx n*array[16], trainingy n*array[1]
     realmodel.fit(trainingx,trainingy)
     testmodely = realmodel.predict(testx)
     for i in range(len(testy)):
         testmodely[i] = (testmodely[i])
         testy[i] = (testy[i])
+    print(list(zip(testy, testmodely)))
     diff =  []
     for i in range(len(testy)):
         diff.append(abs(testmodely[i] - testy[i]))
@@ -1565,11 +1586,14 @@ def xtracttopfeat():
     # reading each patients data, and putting it into the dictionary
     for ind in range(132539,142674):
         filename = str(ind) + ".txt"
+        if not os.path.isfile(filename):
+            continue
         try:
             f = open(filename,'r')
             recids.append(ind)
             index += 1
         except IOError as e:
+            print(e)
             pass
         featdict = dict.fromkeys(featset,[])
         featdict1st24 = dict.fromkeys(featset,[])
@@ -1908,6 +1932,9 @@ def learnhmm(validpatientsindices,KNNfeats,reallos,inputHmmallVars,ovlapinputHmm
         KNNtest[i,:] = KNNfeats[testindices[i],:]
     # impute featuers usign KNN features of age and gender
     (inputhmmtrain,inputhmmtest) = imputefeatures(trainindices, testindices, inputhmm,KNNtrain,KNNtest,dimensionality,numvars)
+    # inputhmm n * array[(6 * 7)]
+    # KNNtrain,KNNtest m * 2
+    # inputhmmtrain,inputhmmtest n*6*7
     (ovlapinputhmmtrain,ovlapinputhmmtest) = imputefeatures(trainindices, testindices, ovlapinputhmm,KNNtrain,KNNtest,overdimensionality,numvars) 
     inputtrain = inputhmmtrain
     ovlapinputtrain = ovlapinputhmmtrain  
@@ -1943,6 +1970,7 @@ def learnhmm(validpatientsindices,KNNfeats,reallos,inputHmmallVars,ovlapinputHmm
     noinits = 5 
     # running the actual hmm model here
     (ordscore,ordselalg,ordselcovartype) = hmmcompactgrid(nstates,realinputtrain,trainlengths,noinits,dimensionality)
+    # realinputtrain 6num_pat * 7
     (ovlapscore,ovlapselalg,ovlapselcovartype) = hmmcompactgrid(nstates, realovlapinputtrain, ovlaptrainlengths, noinits,overdimensionality)
     # loadign the best model to get the data
     name = "bestmodelak " + str(dimensionality) + ".pkl"

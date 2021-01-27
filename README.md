@@ -28,3 +28,7 @@ Feel free to use these files in your research , but kindly cite us if you end up
 Mani Sotoodeh, Joyce Ho. (2019). "Improving length of stay prediction using a hidden Markov model." AMIA 2019 Summit
 
 Should you have any questions contact me at: mani.sotoodeh--at--gmail.com
+
+## a simple demo 
+1. export to los_hmm_cohort.csv and los_hmm_dataset.csv
+2. python3 knn-hmm-lasso-on-aggregated-dataset.py
